@@ -1,0 +1,1 @@
+ALTER TABLE t_task DROP COLUMN IF EXISTS story_point;

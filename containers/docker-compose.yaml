@@ -1,0 +1,12 @@
+name: kihenya-daic-app
+
+services:
+  rdb:
+    image: postgres
+    container_name: "rdb_k_daic_db"
+    ports:
+      - "55436:5432"
+    environment:
+      POSTGRES_USER: localdev1
+      POSTGRES_PASSWORD: localdev1
+      POSTGRES_DB: k_daic_db
