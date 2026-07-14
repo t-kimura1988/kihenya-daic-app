@@ -1,4 +1,4 @@
-package main
+package daicapp
 
 import (
 	"database/sql"
