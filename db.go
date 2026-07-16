@@ -1,4 +1,4 @@
-package main
+package daicapp
 
 import (
 	"context"
@@ -96,10 +96,11 @@ func InitDB() error {
 	return nil
 }
 
-func CloseDB() {
+func CloseDB() error {
 	if db != nil {
 		db.Close()
 	}
+	return nil
 }
 
 func GetPgxConn() *pgxpool.Pool {

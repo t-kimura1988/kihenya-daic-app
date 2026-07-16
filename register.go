@@ -1,15 +1,12 @@
-package main
+package daicapp
 
 import (
-	"flag"
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 
 	"connectrpc.com/connect"
-	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -28,8 +25,6 @@ import (
 	taskconnect "github.com/t-kimura1988/kihenya-daic-proto/gen/go/daic/v1/task/taskconnect"
 )
 
-var port = flag.Int("port", 50054, "The server port")
-
 func init() {
 	loc, err := time.LoadLocation("Asia/Tokyo")
 	if err != nil {
@@ -38,44 +33,31 @@ func init() {
 	time.Local = loc
 }
 
-func main() {
-	if err := godotenv.Overload(); err != nil {
-		logrus.WithError(err).Warn("Error loading .env file")
-	}
-
-	flag.Parse()
-	logrus.SetFormatter(&logrus.JSONFormatter{})
-	logrus.SetLevel(logrus.InfoLevel)
-
-	serverPort := *port
-	if portStr := os.Getenv("PORT"); portStr != "" {
-		if p, err := strconv.Atoi(portStr); err == nil {
-			serverPort = p
-		}
-	}
-
+// Register migrates, connects to DB, and mounts Daic Connect handlers on mux.
+// Caller must invoke the returned cleanup when shutting down.
+func Register(mux *http.ServeMux) (cleanup func() error, err error) {
 	if err := RunMigrations(); err != nil {
-		logrus.WithError(err).Fatal("failed to run database migrations")
+		return nil, fmt.Errorf("daic migrations: %w", err)
 	}
 
 	if err := InitDB(); err != nil {
-		logrus.WithError(err).Fatal("failed to initialize database")
+		return nil, fmt.Errorf("daic init db: %w", err)
 	}
-	defer CloseDB()
 
 	jwtSecret := os.Getenv("SUPABASE_JWT_SECRET")
 	jwtIssuer := os.Getenv("SUPABASE_JWT_ISSUER")
 	if jwtIssuer == "" {
-		logrus.Fatal("SUPABASE_JWT_ISSUER environment variable is not set")
+		_ = CloseDB()
+		return nil, fmt.Errorf("SUPABASE_JWT_ISSUER environment variable is not set")
 	}
 
 	tokenValidator, err := NewTokenValidator(jwtSecret, jwtIssuer)
 	if err != nil {
-		logrus.WithError(err).Fatal("failed to create token validator")
+		_ = CloseDB()
+		return nil, fmt.Errorf("daic token validator: %w", err)
 	}
 
 	authInterceptor := interceptor.NewAuthInterceptor(tokenValidator, GetQueries())
-	mux := http.NewServeMux()
 
 	accountHandler := account.NewHandler(GetQueries())
 	accountPath, accountHTTPHandler := accountconnect.NewAccountServiceHandler(
@@ -113,14 +95,34 @@ func main() {
 	)
 	mux.Handle(diaryPath, diaryHTTPHandler)
 
+	logrus.Info("daic handlers registered")
+	return CloseDB, nil
+}
+
+// ListenAndServe starts an h2c HTTP server with all Daic handlers mounted.
+func ListenAndServe(addr string) error {
+	mux := http.NewServeMux()
+	cleanup, err := Register(mux)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = cleanup() }()
+
 	h2s := &http2.Server{}
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", serverPort),
-		Handler: h2c.NewHandler(mux, h2s),
+		Addr:         addr,
+		Handler:      h2c.NewHandler(mux, h2s),
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
 
 	logrus.WithField("addr", server.Addr).Info("Daic server listening (Connect over HTTP/2)")
-	if err := server.ListenAndServe(); err != nil {
-		logrus.WithError(err).Fatal("failed to serve")
-	}
+	return server.ListenAndServe()
+}
+
+// InitLogging configures the shared logrus formatter used by this service.
+func InitLogging() {
+	logrus.SetFormatter(&logrus.JSONFormatter{})
+	logrus.SetLevel(logrus.InfoLevel)
 }
