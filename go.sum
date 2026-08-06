@@ -97,6 +97,8 @@ github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 github.com/t-kimura1988/kihenya-blog-proto v0.0.52 h1:eM0r+VVEE3+xTdKLmlw6ry7tJVIG5nFk4YE0D9OFuYw=
 github.com/t-kimura1988/kihenya-blog-proto v0.0.52/go.mod h1:IMeYzOETdJRTKJMXvfxYkvPCpfJ8wkDhYOSSZz19oCU=
+github.com/t-kimura1988/kihenya-daic-proto v0.0.2 h1:HGOeDTl/u69Hw43LgN7/xqVeU6SnAidqR1SO4srcyv0=
+github.com/t-kimura1988/kihenya-daic-proto v0.0.2/go.mod h1:nvl0FxGkB4jcfNdrjFgb0cp0I6fRhOJ2L0pZkzQnrkw=
 go.opentelemetry.io/auto/sdk v1.1.0 h1:cH53jehLUN6UFLY71z+NDOiNJqDdPRaXzTel0sJySYA=
 go.opentelemetry.io/auto/sdk v1.1.0/go.mod h1:3wSPjt5PWp2RhlCcmmOial7AvC4DQqZb7a7wCow3W8A=
 go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.61.0 h1:F7Jx+6hwnZ41NSFTO5q4LYDtJRXBf2PD0rNBkeB/lus=
