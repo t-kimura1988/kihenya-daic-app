@@ -8,6 +8,7 @@ import (
 
 	"buf.build/go/protovalidate"
 	"connectrpc.com/connect"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/t-kimura1988/kihenya-daic-app/internal/db/sqlc"
 	accountv1 "github.com/t-kimura1988/kihenya-daic-proto/gen/go/daic/v1/account"
 	"google.golang.org/protobuf/proto"
@@ -46,6 +47,16 @@ func (h *Handler) CreateAccount(ctx context.Context, req *connect.Request[accoun
 		DisplayName: req.Msg.DisplayName,
 	})
 	if err != nil {
+		// 並行作成で UNIQUE(uid) に当たった場合は既存を返す
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			existingAfterConflict, getErr := h.queries.GetAccountByUID(ctx, userID)
+			if getErr == nil {
+				return connect.NewResponse(&accountv1.CreateAccountResponse{
+					Account: toProtoAccount(existingAfterConflict),
+				}), nil
+			}
+		}
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("create account: %w", err))
 	}
 
