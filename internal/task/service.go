@@ -47,6 +47,11 @@ func (s *Service) CreateTask(ctx context.Context, req *connect.Request[taskv1.Cr
 		return nil, connect.NewError(connect.CodeFailedPrecondition, fmt.Errorf("cannot add tasks to an achieved goal"))
 	}
 
+	taskCd, err := util.GenerateTaskCode()
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("generate task code: %w", err))
+	}
+
 	created, err := s.queries.CreateTask(ctx, sqlc.CreateTaskParams{
 		GoalID:      req.Msg.GoalId,
 		AccountID:   accountID,
@@ -54,6 +59,7 @@ func (s *Service) CreateTask(ctx context.Context, req *connect.Request[taskv1.Cr
 		Description: util.ToPgText(req.Msg.Description),
 		Priority:    priorityToDB(req.Msg.Priority),
 		StoryPoint:  normalizeStoryPoint(req.Msg.StoryPoint),
+		TaskCd:      taskCd,
 	})
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("create task: %w", err))
@@ -220,6 +226,7 @@ func toProtoTask(row sqlc.TTask) *taskv1.Task {
 		Priority:    priorityFromDB(row.Priority),
 		Status:      taskStatusFromDB(row.Status),
 		StoryPoint:  row.StoryPoint,
+		TaskCd:      row.TaskCd,
 		CreatedAt:   util.FormatPgTimestamp(row.CreatedAt),
 		UpdatedAt:   util.FormatPgTimestamp(row.UpdatedAt),
 	}

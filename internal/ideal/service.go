@@ -33,10 +33,16 @@ func (s *Service) CreateIdeal(ctx context.Context, req *connect.Request[idealv1.
 		return nil, connect.NewError(connect.CodeUnauthenticated, err)
 	}
 
+	idealCd, err := util.GenerateIdealCode()
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("generate ideal code: %w", err))
+	}
+
 	created, err := s.queries.CreateIdeal(ctx, sqlc.CreateIdealParams{
 		AccountID:   accountID,
 		Title:       req.Msg.Title,
 		Description: util.ToPgText(req.Msg.Description),
+		IdealCd:     idealCd,
 	})
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("create ideal: %w", err))
@@ -141,6 +147,7 @@ func toProtoIdeal(row sqlc.TIdeal) *idealv1.Ideal {
 		Title:       row.Title,
 		Description: util.PgTextString(row.Description),
 		Status:      idealStatusFromDB(row.Status),
+		IdealCd:     row.IdealCd,
 		CreatedAt:   util.FormatPgTimestamp(row.CreatedAt),
 		UpdatedAt:   util.FormatPgTimestamp(row.UpdatedAt),
 	}
