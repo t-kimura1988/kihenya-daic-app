@@ -48,6 +48,11 @@ func (s *Service) CreateGoal(ctx context.Context, req *connect.Request[goalv1.Cr
 		return nil, err
 	}
 
+	goalCd, err := util.GenerateGoalCode()
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("generate goal code: %w", err))
+	}
+
 	created, err := s.queries.CreateGoal(ctx, sqlc.CreateGoalParams{
 		IdealID:         req.Msg.IdealId,
 		AccountID:       accountID,
@@ -55,6 +60,7 @@ func (s *Service) CreateGoal(ctx context.Context, req *connect.Request[goalv1.Cr
 		Description:     util.ToPgText(req.Msg.Description),
 		SortOrder:       req.Msg.SortOrder,
 		DependsOnGoalID: util.ToPgInt8(dependsOnID),
+		GoalCd:          goalCd,
 	})
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("create goal: %w", err))
@@ -306,6 +312,7 @@ func toProtoGoal(row sqlc.TGoal) *goalv1.Goal {
 		Status:      goalStatusFromDB(row.Status),
 		Achievement: goalAchievementFromDB(row.Achievement),
 		SortOrder:   row.SortOrder,
+		GoalCd:      row.GoalCd,
 		CreatedAt:   util.FormatPgTimestamp(row.CreatedAt),
 		UpdatedAt:   util.FormatPgTimestamp(row.UpdatedAt),
 	}

@@ -13,7 +13,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/sirupsen/logrus v1.9.4
 	github.com/t-kimura1988/kihenya-blog-proto v0.0.52
-	github.com/t-kimura1988/kihenya-daic-proto v0.0.2
+	github.com/t-kimura1988/kihenya-daic-proto v0.0.3
 	golang.org/x/net v0.57.0
 	google.golang.org/protobuf v1.36.11
 )
@@ -37,3 +37,5 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251202230838-ff82c1b0f217 // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.3 // indirect
 )
+
+replace github.com/t-kimura1988/kihenya-daic-proto => ../kihenya-daic-proto

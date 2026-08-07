@@ -15,7 +15,7 @@ const achieveGoal = `-- name: AchieveGoal :one
 UPDATE t_goal
 SET achievement = '2', status = '3', updated_at = CURRENT_TIMESTAMP
 WHERE id = $1 AND account_id = $2 AND del_flg = '0'
-RETURNING id, ideal_id, account_id, title, description, status, achievement, sort_order, depends_on_goal_id, del_flg, created_at, updated_at
+RETURNING id, ideal_id, account_id, title, description, status, achievement, sort_order, depends_on_goal_id, goal_cd, del_flg, created_at, updated_at
 `
 
 type AchieveGoalParams struct {
@@ -36,6 +36,7 @@ func (q *Queries) AchieveGoal(ctx context.Context, arg AchieveGoalParams) (TGoal
 		&i.Achievement,
 		&i.SortOrder,
 		&i.DependsOnGoalID,
+		&i.GoalCd,
 		&i.DelFlg,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -47,7 +48,7 @@ const cancelGoal = `-- name: CancelGoal :one
 UPDATE t_goal
 SET status = '4', updated_at = CURRENT_TIMESTAMP
 WHERE id = $1 AND account_id = $2 AND del_flg = '0'
-RETURNING id, ideal_id, account_id, title, description, status, achievement, sort_order, depends_on_goal_id, del_flg, created_at, updated_at
+RETURNING id, ideal_id, account_id, title, description, status, achievement, sort_order, depends_on_goal_id, goal_cd, del_flg, created_at, updated_at
 `
 
 type CancelGoalParams struct {
@@ -68,6 +69,7 @@ func (q *Queries) CancelGoal(ctx context.Context, arg CancelGoalParams) (TGoal, 
 		&i.Achievement,
 		&i.SortOrder,
 		&i.DependsOnGoalID,
+		&i.GoalCd,
 		&i.DelFlg,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -79,7 +81,7 @@ const cancelTask = `-- name: CancelTask :one
 UPDATE t_task
 SET status = '4', updated_at = CURRENT_TIMESTAMP
 WHERE id = $1 AND account_id = $2 AND del_flg = '0'
-RETURNING id, goal_id, account_id, title, description, priority, status, story_point, del_flg, created_at, updated_at
+RETURNING id, goal_id, account_id, title, description, priority, status, story_point, task_cd, del_flg, created_at, updated_at
 `
 
 type CancelTaskParams struct {
@@ -99,6 +101,7 @@ func (q *Queries) CancelTask(ctx context.Context, arg CancelTaskParams) (TTask, 
 		&i.Priority,
 		&i.Status,
 		&i.StoryPoint,
+		&i.TaskCd,
 		&i.DelFlg,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -110,7 +113,7 @@ const completeTask = `-- name: CompleteTask :one
 UPDATE t_task
 SET status = '3', updated_at = CURRENT_TIMESTAMP
 WHERE id = $1 AND account_id = $2 AND del_flg = '0'
-RETURNING id, goal_id, account_id, title, description, priority, status, story_point, del_flg, created_at, updated_at
+RETURNING id, goal_id, account_id, title, description, priority, status, story_point, task_cd, del_flg, created_at, updated_at
 `
 
 type CompleteTaskParams struct {
@@ -130,6 +133,7 @@ func (q *Queries) CompleteTask(ctx context.Context, arg CompleteTaskParams) (TTa
 		&i.Priority,
 		&i.Status,
 		&i.StoryPoint,
+		&i.TaskCd,
 		&i.DelFlg,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -180,9 +184,9 @@ func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (T
 }
 
 const createGoal = `-- name: CreateGoal :one
-INSERT INTO t_goal (ideal_id, account_id, title, description, sort_order, depends_on_goal_id)
-VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, ideal_id, account_id, title, description, status, achievement, sort_order, depends_on_goal_id, del_flg, created_at, updated_at
+INSERT INTO t_goal (ideal_id, account_id, title, description, sort_order, depends_on_goal_id, goal_cd)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, ideal_id, account_id, title, description, status, achievement, sort_order, depends_on_goal_id, goal_cd, del_flg, created_at, updated_at
 `
 
 type CreateGoalParams struct {
@@ -192,6 +196,7 @@ type CreateGoalParams struct {
 	Description     pgtype.Text `json:"description"`
 	SortOrder       int32       `json:"sort_order"`
 	DependsOnGoalID pgtype.Int8 `json:"depends_on_goal_id"`
+	GoalCd          string      `json:"goal_cd"`
 }
 
 func (q *Queries) CreateGoal(ctx context.Context, arg CreateGoalParams) (TGoal, error) {
@@ -202,6 +207,7 @@ func (q *Queries) CreateGoal(ctx context.Context, arg CreateGoalParams) (TGoal, 
 		arg.Description,
 		arg.SortOrder,
 		arg.DependsOnGoalID,
+		arg.GoalCd,
 	)
 	var i TGoal
 	err := row.Scan(
@@ -214,6 +220,7 @@ func (q *Queries) CreateGoal(ctx context.Context, arg CreateGoalParams) (TGoal, 
 		&i.Achievement,
 		&i.SortOrder,
 		&i.DependsOnGoalID,
+		&i.GoalCd,
 		&i.DelFlg,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -222,19 +229,25 @@ func (q *Queries) CreateGoal(ctx context.Context, arg CreateGoalParams) (TGoal, 
 }
 
 const createIdeal = `-- name: CreateIdeal :one
-INSERT INTO t_ideal (account_id, title, description)
-VALUES ($1, $2, $3)
-RETURNING id, account_id, title, description, status, del_flg, created_at, updated_at
+INSERT INTO t_ideal (account_id, title, description, ideal_cd)
+VALUES ($1, $2, $3, $4)
+RETURNING id, account_id, title, description, status, ideal_cd, del_flg, created_at, updated_at
 `
 
 type CreateIdealParams struct {
 	AccountID   int64       `json:"account_id"`
 	Title       string      `json:"title"`
 	Description pgtype.Text `json:"description"`
+	IdealCd     string      `json:"ideal_cd"`
 }
 
 func (q *Queries) CreateIdeal(ctx context.Context, arg CreateIdealParams) (TIdeal, error) {
-	row := q.db.QueryRow(ctx, createIdeal, arg.AccountID, arg.Title, arg.Description)
+	row := q.db.QueryRow(ctx, createIdeal,
+		arg.AccountID,
+		arg.Title,
+		arg.Description,
+		arg.IdealCd,
+	)
 	var i TIdeal
 	err := row.Scan(
 		&i.ID,
@@ -242,6 +255,7 @@ func (q *Queries) CreateIdeal(ctx context.Context, arg CreateIdealParams) (TIdea
 		&i.Title,
 		&i.Description,
 		&i.Status,
+		&i.IdealCd,
 		&i.DelFlg,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -275,9 +289,9 @@ func (q *Queries) CreateKblogBookletLink(ctx context.Context, arg CreateKblogBoo
 }
 
 const createTask = `-- name: CreateTask :one
-INSERT INTO t_task (goal_id, account_id, title, description, priority, story_point)
-VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, goal_id, account_id, title, description, priority, status, story_point, del_flg, created_at, updated_at
+INSERT INTO t_task (goal_id, account_id, title, description, priority, story_point, task_cd)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, goal_id, account_id, title, description, priority, status, story_point, task_cd, del_flg, created_at, updated_at
 `
 
 type CreateTaskParams struct {
@@ -287,6 +301,7 @@ type CreateTaskParams struct {
 	Description pgtype.Text `json:"description"`
 	Priority    string      `json:"priority"`
 	StoryPoint  int32       `json:"story_point"`
+	TaskCd      string      `json:"task_cd"`
 }
 
 func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (TTask, error) {
@@ -297,6 +312,7 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (TTask, 
 		arg.Description,
 		arg.Priority,
 		arg.StoryPoint,
+		arg.TaskCd,
 	)
 	var i TTask
 	err := row.Scan(
@@ -308,6 +324,7 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (TTask, 
 		&i.Priority,
 		&i.Status,
 		&i.StoryPoint,
+		&i.TaskCd,
 		&i.DelFlg,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -404,7 +421,7 @@ func (q *Queries) GetAccountByUID(ctx context.Context, uid string) (TDaicAccount
 }
 
 const getGoalByID = `-- name: GetGoalByID :one
-SELECT id, ideal_id, account_id, title, description, status, achievement, sort_order, depends_on_goal_id, del_flg, created_at, updated_at
+SELECT id, ideal_id, account_id, title, description, status, achievement, sort_order, depends_on_goal_id, goal_cd, del_flg, created_at, updated_at
 FROM t_goal
 WHERE id = $1 AND account_id = $2 AND del_flg = '0'
 `
@@ -427,6 +444,7 @@ func (q *Queries) GetGoalByID(ctx context.Context, arg GetGoalByIDParams) (TGoal
 		&i.Achievement,
 		&i.SortOrder,
 		&i.DependsOnGoalID,
+		&i.GoalCd,
 		&i.DelFlg,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -501,7 +519,7 @@ func (q *Queries) GetGoalPointsByIdeal(ctx context.Context, arg GetGoalPointsByI
 }
 
 const getIdealByID = `-- name: GetIdealByID :one
-SELECT id, account_id, title, description, status, del_flg, created_at, updated_at
+SELECT id, account_id, title, description, status, ideal_cd, del_flg, created_at, updated_at
 FROM t_ideal
 WHERE id = $1 AND account_id = $2 AND del_flg = '0'
 `
@@ -520,6 +538,7 @@ func (q *Queries) GetIdealByID(ctx context.Context, arg GetIdealByIDParams) (TId
 		&i.Title,
 		&i.Description,
 		&i.Status,
+		&i.IdealCd,
 		&i.DelFlg,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -552,7 +571,7 @@ func (q *Queries) GetKblogBookletLink(ctx context.Context, arg GetKblogBookletLi
 }
 
 const getTaskByID = `-- name: GetTaskByID :one
-SELECT id, goal_id, account_id, title, description, priority, status, story_point, del_flg, created_at, updated_at
+SELECT id, goal_id, account_id, title, description, priority, status, story_point, task_cd, del_flg, created_at, updated_at
 FROM t_task
 WHERE id = $1 AND account_id = $2 AND del_flg = '0'
 `
@@ -574,6 +593,7 @@ func (q *Queries) GetTaskByID(ctx context.Context, arg GetTaskByIDParams) (TTask
 		&i.Priority,
 		&i.Status,
 		&i.StoryPoint,
+		&i.TaskCd,
 		&i.DelFlg,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -582,7 +602,7 @@ func (q *Queries) GetTaskByID(ctx context.Context, arg GetTaskByIDParams) (TTask
 }
 
 const listGoalsByIdeal = `-- name: ListGoalsByIdeal :many
-SELECT id, ideal_id, account_id, title, description, status, achievement, sort_order, depends_on_goal_id, del_flg, created_at, updated_at
+SELECT id, ideal_id, account_id, title, description, status, achievement, sort_order, depends_on_goal_id, goal_cd, del_flg, created_at, updated_at
 FROM t_goal
 WHERE ideal_id = $1 AND account_id = $2 AND del_flg = '0'
 ORDER BY sort_order ASC, created_at ASC
@@ -612,6 +632,7 @@ func (q *Queries) ListGoalsByIdeal(ctx context.Context, arg ListGoalsByIdealPara
 			&i.Achievement,
 			&i.SortOrder,
 			&i.DependsOnGoalID,
+			&i.GoalCd,
 			&i.DelFlg,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -627,7 +648,7 @@ func (q *Queries) ListGoalsByIdeal(ctx context.Context, arg ListGoalsByIdealPara
 }
 
 const listIdealsByAccount = `-- name: ListIdealsByAccount :many
-SELECT id, account_id, title, description, status, del_flg, created_at, updated_at
+SELECT id, account_id, title, description, status, ideal_cd, del_flg, created_at, updated_at
 FROM t_ideal
 WHERE account_id = $1 AND del_flg = '0'
 ORDER BY created_at DESC
@@ -648,6 +669,7 @@ func (q *Queries) ListIdealsByAccount(ctx context.Context, accountID int64) ([]T
 			&i.Title,
 			&i.Description,
 			&i.Status,
+			&i.IdealCd,
 			&i.DelFlg,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -663,7 +685,7 @@ func (q *Queries) ListIdealsByAccount(ctx context.Context, accountID int64) ([]T
 }
 
 const listTasksByGoal = `-- name: ListTasksByGoal :many
-SELECT id, goal_id, account_id, title, description, priority, status, story_point, del_flg, created_at, updated_at
+SELECT id, goal_id, account_id, title, description, priority, status, story_point, task_cd, del_flg, created_at, updated_at
 FROM t_task
 WHERE goal_id = $1 AND account_id = $2 AND del_flg = '0'
 ORDER BY priority DESC, created_at ASC
@@ -692,6 +714,7 @@ func (q *Queries) ListTasksByGoal(ctx context.Context, arg ListTasksByGoalParams
 			&i.Priority,
 			&i.Status,
 			&i.StoryPoint,
+			&i.TaskCd,
 			&i.DelFlg,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -707,7 +730,7 @@ func (q *Queries) ListTasksByGoal(ctx context.Context, arg ListTasksByGoalParams
 }
 
 const listTasksByIdealPriority = `-- name: ListTasksByIdealPriority :many
-SELECT t.id, t.goal_id, t.account_id, t.title, t.description, t.priority, t.status, t.story_point, t.del_flg, t.created_at, t.updated_at
+SELECT t.id, t.goal_id, t.account_id, t.title, t.description, t.priority, t.status, t.story_point, t.task_cd, t.del_flg, t.created_at, t.updated_at
 FROM t_task t
 INNER JOIN t_goal g ON t.goal_id = g.id
 WHERE g.ideal_id = $1 AND t.account_id = $2 AND t.del_flg = '0' AND g.del_flg = '0' AND t.status NOT IN ('3', '4')
@@ -737,6 +760,7 @@ func (q *Queries) ListTasksByIdealPriority(ctx context.Context, arg ListTasksByI
 			&i.Priority,
 			&i.Status,
 			&i.StoryPoint,
+			&i.TaskCd,
 			&i.DelFlg,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -755,7 +779,7 @@ const updateGoal = `-- name: UpdateGoal :one
 UPDATE t_goal
 SET title = $3, description = $4, status = $5, sort_order = $6, depends_on_goal_id = $7, updated_at = CURRENT_TIMESTAMP
 WHERE id = $1 AND account_id = $2 AND del_flg = '0'
-RETURNING id, ideal_id, account_id, title, description, status, achievement, sort_order, depends_on_goal_id, del_flg, created_at, updated_at
+RETURNING id, ideal_id, account_id, title, description, status, achievement, sort_order, depends_on_goal_id, goal_cd, del_flg, created_at, updated_at
 `
 
 type UpdateGoalParams struct {
@@ -789,6 +813,7 @@ func (q *Queries) UpdateGoal(ctx context.Context, arg UpdateGoalParams) (TGoal, 
 		&i.Achievement,
 		&i.SortOrder,
 		&i.DependsOnGoalID,
+		&i.GoalCd,
 		&i.DelFlg,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -800,7 +825,7 @@ const updateIdeal = `-- name: UpdateIdeal :one
 UPDATE t_ideal
 SET title = $3, description = $4, status = $5, updated_at = CURRENT_TIMESTAMP
 WHERE id = $1 AND account_id = $2 AND del_flg = '0'
-RETURNING id, account_id, title, description, status, del_flg, created_at, updated_at
+RETURNING id, account_id, title, description, status, ideal_cd, del_flg, created_at, updated_at
 `
 
 type UpdateIdealParams struct {
@@ -826,6 +851,7 @@ func (q *Queries) UpdateIdeal(ctx context.Context, arg UpdateIdealParams) (TIdea
 		&i.Title,
 		&i.Description,
 		&i.Status,
+		&i.IdealCd,
 		&i.DelFlg,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -837,7 +863,7 @@ const updateTask = `-- name: UpdateTask :one
 UPDATE t_task
 SET title = $3, description = $4, priority = $5, status = $6, story_point = $7, updated_at = CURRENT_TIMESTAMP
 WHERE id = $1 AND account_id = $2 AND del_flg = '0'
-RETURNING id, goal_id, account_id, title, description, priority, status, story_point, del_flg, created_at, updated_at
+RETURNING id, goal_id, account_id, title, description, priority, status, story_point, task_cd, del_flg, created_at, updated_at
 `
 
 type UpdateTaskParams struct {
@@ -870,6 +896,7 @@ func (q *Queries) UpdateTask(ctx context.Context, arg UpdateTaskParams) (TTask, 
 		&i.Priority,
 		&i.Status,
 		&i.StoryPoint,
+		&i.TaskCd,
 		&i.DelFlg,
 		&i.CreatedAt,
 		&i.UpdatedAt,

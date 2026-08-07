@@ -27,6 +27,7 @@ type TGoal struct {
 	Achievement     string           `json:"achievement"`
 	SortOrder       int32            `json:"sort_order"`
 	DependsOnGoalID pgtype.Int8      `json:"depends_on_goal_id"`
+	GoalCd          string           `json:"goal_cd"`
 	DelFlg          string           `json:"del_flg"`
 	CreatedAt       pgtype.Timestamp `json:"created_at"`
 	UpdatedAt       pgtype.Timestamp `json:"updated_at"`
@@ -38,6 +39,7 @@ type TIdeal struct {
 	Title       string           `json:"title"`
 	Description pgtype.Text      `json:"description"`
 	Status      string           `json:"status"`
+	IdealCd     string           `json:"ideal_cd"`
 	DelFlg      string           `json:"del_flg"`
 	CreatedAt   pgtype.Timestamp `json:"created_at"`
 	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
@@ -60,6 +62,7 @@ type TTask struct {
 	Priority    string           `json:"priority"`
 	Status      string           `json:"status"`
 	StoryPoint  int32            `json:"story_point"`
+	TaskCd      string           `json:"task_cd"`
 	DelFlg      string           `json:"del_flg"`
 	CreatedAt   pgtype.Timestamp `json:"created_at"`
 	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
